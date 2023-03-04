@@ -34,10 +34,12 @@ app.post("/create", (req, res) => {
 
 app.post("/update", (req, res) => {
     let task = req.body;
+
     let oldTask = filesystem.read(task.id);
     oldTask.content = task.content;
     oldTask.status = task.status;
     oldTask.date = task.date;
+
     filesystem.write(oldTask);
 })
 
