@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Home page</title>
+</head>
+
+<body onload="getAllTasks()">
+<div class="container-md">
+    <div class="d-flex justify-content-between mb-4 mt-5">
+        <div>
+            <h1>TASKS</h1>
+            <div class="d-flex">
+                <input type="text" class="form-control " id="search" oninput="getAllTasks()" placeholder="Search.."/>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-dark text-white " data-bs-toggle="modal" data-bs-target="#createTaskModel"
+                    onclick="createOpen()"
+                    type="button">Create task
+            </button>
+        </div>
+    </div>
+
+    <table class="table" id="table">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">TASK</th>
+            <th scope="col">COMPLETION DATE</th>
+            <th scope="col">EXECUTION STATUS</th>
+            <th scope="col">FILE</th>
+            <th scope="col">ACTION</th>
+        </tr>
+        </thead>
+        <tbody id="body-table">
+
+        </tbody>
+    </table>
+
+
+    <!--Create task modal-->
+    <div class="modal fade" id="createTaskModel" tabindex="-1" aria-labelledby="createTaskModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createTaskModalLabel">CREATE TASK</h5>
+                </div>
+                <div class="modal-body">
+                    <b>TASK:</b>
+                    <input type="text" class="form-control  mb-3" id="task-content"
+                           placeholder="Enter a task.."/>
+
+                    <b>EXECUTION STATUS:</b>
+                    <input type="number" class="form-control mb-3" id="executing-status"
+                           placeholder="Enter a execution status.." min="0" max="100" step="1"/>
+
+                    <b>COMPLETION DATE:</b>
+                    <input type="date" class="form-control  mb-3" id="completion-date"/>
+
+                    <b>INPUT FILE:</b>
+                    <input type="file" class="form-control  mb-3" lang="en" id="input-file"/>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="createTask()">
+                        Create
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!--Update task modal-->
+    <div class="modal fade" id="updateTaskModel" tabindex="-1" aria-labelledby="updateTaskModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateTaskModalLabel">UPDATE TASK</h5>
+                </div>
+                <div class="modal-body">
+                    <b>TASK:</b>
+                    <input type="text" class="form-control  mb-3" id="task-content-upd"
+                           placeholder="Enter a task.."/>
+
+                    <b>EXECUTION STATUS:</b>
+                    <input type="number" class="form-control mb-3" id="executing-status-upd"
+                           placeholder="Enter a execution status.." min="0" max="100" step="1"/>
+
+                    <b>COMPLETION DATE:</b>
+                    <input type="date" class="form-control  mb-3" id="completion-date-upd"/>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="updateTask()">
+                        Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js"
+            integrity="sha384-j0CNLUeiqtyaRmlzUHCPZ+Gy5fQu0dQ6eZ/xAww941Ai1SxSY+0EQqNXNE6DZiVc"
+            crossorigin="anonymous"></script>
+</body>
+</html>
+
+<script>
+
+    async function updateTask() {
+        let task =
+            {
+                id: idForUpdate,
+                content: document.getElementById('task-content-upd').value,
+                status: document.getElementById('executing-status-upd').value,
+                date: document.getElementById('completion-date-upd').value,
+
+            }
+
+        const url = `/update`;
+        fetch(url, {
+            method: 'post',
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            },
+            body: JSON.stringify(task)
+        }).then((response) => {
+
+        });
+        getAllTasks();
+    }
+    let idForUpdate;
+    function getTaskForView(id) {
+        idForUpdate=id;
+        const url = `/getTask?id=${id}`;
+        fetch(url, {
+            method: 'get',
+            headers: {
+                "Content-type": "application/octet-stream; charset=UTF-8"
+            },
+
+        })
+            .then(response => response.json())
+            .then(obj => {
+                updateOpen(obj)
+            });
+    }
+
+    function deleteTask(id) {
+        const url = `/delete?id=${id}`;
+        fetch(url, {
+            method: 'delete',
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            },
+
+        })
+            .then(response => response.json())
+            .then(obj => {
+                console.log(obj)
+            });
+    }
+
+    function addRow(table, obj) {
+        let row = document.createElement("tr")
+
+        let td1 = document.createElement("td")
+        let td2 = document.createElement("td")
+        let td3 = document.createElement("td")
+        let td4 = document.createElement("td")
+        let td5 = document.createElement("td")
+        let td6 = document.createElement("td");
+
+        let aFile = document.createElement("a");
+        aFile.innerText = obj.fileName;
+        // aFile.setAttribute('download', obj.fileName);
+        aFile.download = obj.fileName;
+        console.log(obj.fileContent+" "+ obj.fileName);
+
+
+        aFile.href=obj.fileContent;
+        aFile.target="_self";
+        aFile.style.color = "#000000";
+        td5.appendChild(aFile);
+
+
+        let aDelete = document.createElement("a");
+        aDelete.innerText = "delete";
+        aDelete.href = "#"
+        aDelete.onclick = function (event) {
+            deleteTask(obj.id);
+            getAllTasks();
+
+        }
+        aDelete.style.color = "#DC143C";
+
+        let aUpdate = document.createElement("a");
+        aUpdate.innerText = "update";
+        aUpdate.href = "#"
+        aUpdate.setAttribute("data-bs-toggle","modal");
+        aUpdate.setAttribute("data-bs-target","#updateTaskModel");
+        aUpdate.onclick = function (event) {
+            getTaskForView(obj.id);
+        }
+
+        let br = document.createElement("br");
+        td6.appendChild(aUpdate);
+        td6.appendChild(br);
+        td6.appendChild(aDelete);
+
+
+        td1.innerText = obj.ind;
+        td2.innerText = obj.content;
+        td3.innerText = obj.date;
+        td4.innerText = obj.status;
+
+        row.appendChild(td1);
+        row.appendChild(td2);
+        row.appendChild(td3);
+        row.appendChild(td4);
+        row.appendChild(td5);
+        row.appendChild(td6);
+
+        table.appendChild(row)
+    }
+
+    function getAllTasks() {
+        let searchStr = document.getElementById('search').value;
+        const url = `/get?content=${searchStr}`;
+        fetch(url, {
+            method: 'get',
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            },
+
+        })
+            .then(response => response.json())
+            .then(obj => {
+                let table = document.getElementById("body-table");
+                table.innerHTML = "";
+                for (let i = 0; i < obj.length; i++) {
+                    obj[i].ind = i + 1;
+                    addRow(table, obj[i]);
+                }
+            });
+    }
+
+    const readFile = readFile => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(readFile);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+
+    function createOpen() {
+        document.getElementById('task-content').value = "";
+        document.getElementById('executing-status').value = "";
+        document.getElementById('completion-date').value = "";
+        document.getElementById('input-file').value = "";
+    }
+
+    function updateOpen(obj){
+        document.getElementById('task-content-upd').value = obj.content;
+        document.getElementById('executing-status-upd').value = obj.status;
+        document.getElementById('completion-date-upd').value = obj.date;
+    }
+
+    async function createTask() {
+        let task =
+            {
+                id: Date.now(),
+                content: document.getElementById('task-content').value,
+                status: document.getElementById('executing-status').value,
+                date: document.getElementById('completion-date').value,
+                fileName: document.getElementById('input-file').files.item(0).name,
+                fileContent: await readFile(document.getElementById('input-file').files[0]),
+            }
+        console.log(await readFile(document.getElementById('input-file').files[0]));
+
+        const url = `/create`;
+        fetch(url, {
+            method: 'post',
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            },
+            body: JSON.stringify(task)
+        }).then((response) => {
+
+        });
+        getAllTasks();
+    }
+
+</script>
