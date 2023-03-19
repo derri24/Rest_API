@@ -189,44 +189,49 @@
         table.appendChild(row)
     }
 
-    function getAllTasks() {
+    async function getAllTasks() {
         let searchStr = document.getElementById('search').value;
-        const url = `/get?content=${searchStr}`;
-        fetch(url, {
+        const config = {
             method: 'get',
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-type": "application/octet-stream; charset=UTF-8",
             },
-
-        }).then(response => response.json()).then(obj => {
+        }
+        const response = await fetch(`/get?content=${searchStr}`, config)
+        if (response.status === 401) {
+            window.location.href = '/authorization';
+        }
+        let object = await response.json();
             let table = document.getElementById("body-table");
             table.innerHTML = "";
-            for (let i = 0; i < obj.length; i++) {
-                obj[i].ind = i + 1;
-                addRow(table, obj[i]);
+            for (let i = 0; i < object.length; i++) {
+                object[i].ind = i + 1;
+                addRow(table, object[i]);
             }
-        });
     }
 
     let idForUpdate;
 
-    function getTaskForView(id) {
+    async function getTaskForView(id) {
         idForUpdate = id;
-        const url = `/getTask?id=${id}`;
-        fetch(url, {
+
+        const config = {
             method: 'get',
             headers: {
-                "Content-type": "application/octet-stream; charset=UTF-8"
+                "Content-type": "application/octet-stream; charset=UTF-8",
             },
-
-        }).then(response => response.json()).then(obj => {
-            updateOpen(obj)
-        });
+        }
+        const response = await fetch(`/getTask?id=${id}`, config)
+        if (response.status === 401) {
+            window.location.href = '/authorization';
+        }
+        let object = await response.json();
+        updateOpen(object);
     }
 
     async function createTask() {
         let file = document.getElementById('input-file').files;
-        if (file.item(0) === null ) {
+        if (file.item(0) === null) {
             alert("You have not selected a file!");
             return;
         }
@@ -240,16 +245,18 @@
                 fileContent: await readFile(file[0]),
             }
 
-        const url = `/create`;
-        fetch(url, {
+        const config = {
             method: 'post',
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-type": "application/json; charset=UTF-8",
             },
             body: JSON.stringify(task)
-        }).then((response) => {
-        });
-        getAllTasks();
+        }
+        const response = await fetch(`/create`, config)
+        if (response.status === 401) {
+            window.location.href = '/authorization';
+        }
+        await getAllTasks();
     }
 
     async function updateTask() {
@@ -259,31 +266,34 @@
                 content: document.getElementById('task-content-upd').value,
                 status: document.getElementById('executing-status-upd').value,
                 date: document.getElementById('completion-date-upd').value,
-
             }
-        const url = `/update`;
-        fetch(url, {
+
+        const config = {
             method: 'post',
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-type": "application/json; charset=UTF-8",
             },
             body: JSON.stringify(task)
-        }).then((response) => {
-        });
-        getAllTasks();
+        }
+        const response = await fetch(`/update`, config)
+        if (response.status === 401) {
+            window.location.href = '/authorization';
+        }
+        await getAllTasks();
     }
 
-    function deleteTask(id) {
-        const url = `/delete?id=${id}`;
-        fetch(url, {
+    async function deleteTask(id) {
+        const config = {
             method: 'delete',
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-type": "application/json; charset=UTF-8",
             },
-
-        }).then(response => response.json()).then(obj => {
-        });
-        getAllTasks();
+        }
+        const response = await fetch(`/delete?id=${id}`, config)
+        if (response.status === 401) {
+            window.location.href = '/authorization';
+        }
+        await getAllTasks();
     }
 
 </script>

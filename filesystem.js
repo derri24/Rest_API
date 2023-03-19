@@ -1,36 +1,58 @@
 let fs = require('fs');
-let folder = './tasks/';
+let tasksFolder = './tasks/';
+let usersFolder = './users/credentials'
+
+
+function write(obj, path) {
+    let json = JSON.stringify(obj);
+    fs.writeFileSync(path, json, function (err) {
+        if (err)
+            console.log(err);
+    });
+}
+
+function read(path) {
+    return JSON.parse(fs.readFileSync(path, 'utf8'));
+}
 
 module.exports = {
 
-    write: function (obj) {
-        let json = JSON.stringify(obj);
-        fs.writeFileSync(folder + obj.id, json, function (err) {
-            if (err)
-                console.log(err);
-        });
+    readUsers: function () {
+        return read(usersFolder);
     },
 
-    read: function (path) {
-        return JSON.parse(fs.readFileSync(folder + path, 'utf8'));
+    writeUser: function (user) {
+        let credentials = [];
+        if (fs.existsSync(usersFolder)) {
+            credentials = read(usersFolder);
+        }
+        credentials.push(user);
+        write(credentials, usersFolder);
+    },
+
+    writeTask: function (task) {
+        write(task, tasksFolder + task.id)
+    },
+
+    readTask: function (path) {
+        return read(tasksFolder + path);
     },
 
     readAllTasks: function (content) {
         let tasks = [];
-        fs.readdirSync(folder).forEach(file => {
-            let task = this.read(file);
+        fs.readdirSync(tasksFolder).forEach(file => {
+            let task = this.readTask(file);
             if (task.content.includes(content))
                 tasks.push(task);
         });
         return tasks;
     },
 
-    delete: function (path) {
+    delete: function (id) {
         try {
-            fs.unlinkSync(folder + path);
+            fs.unlinkSync(tasksFolder + id);
         } catch (error) {
             console.log(error);
         }
     },
-
 };
