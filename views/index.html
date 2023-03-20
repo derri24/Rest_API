@@ -145,8 +145,10 @@
         let td6 = document.createElement("td");
 
         let aFile = document.createElement("a");
-        aFile.innerText = obj.fileName;
-        aFile.download = obj.fileName;
+        if (obj.fileName !== null) {
+            aFile.innerText = obj.fileName;
+            aFile.download = obj.fileName;
+        }
         aFile.href = obj.fileContent;
         aFile.target = "_self";
         aFile.style.color = "#000000";
@@ -189,74 +191,51 @@
         table.appendChild(row)
     }
 
-    async function getAllTasks() {
-        let searchStr = document.getElementById('search').value;
-        const config = {
-            method: 'get',
-            headers: {
-                "Content-type": "application/octet-stream; charset=UTF-8",
-            },
-        }
-        const response = await fetch(`/get?content=${searchStr}`, config)
-        if (response.status === 401) {
-            window.location.href = '/authorization';
-        }
-        let object = await response.json();
-            let table = document.getElementById("body-table");
-            table.innerHTML = "";
-            for (let i = 0; i < object.length; i++) {
-                object[i].ind = i + 1;
-                addRow(table, object[i]);
+
+    const ws = new WebSocket("ws://localhost:3003");
+
+    ws.addEventListener("message", (event) => {
+        let result = JSON.parse(event.data)
+        if (result.status === 200) {
+            if (result.request === 'getAllTasks') {
+                fillTable(result.tasks);
+                return;
             }
+            if (result.request === 'getTaskForView')
+                updateOpen(result.task);
+
+        } else if (result.status === 401)
+            window.location.href = '/authorization';
+    });
+
+    function fillTable(tasks) {
+        let table = document.getElementById("body-table");
+        table.innerHTML = "";
+        for (let i = 0; i < tasks.length; i++) {
+            tasks[i].ind = i + 1;
+            addRow(table, tasks[i]);
+        }
+    }
+
+    async function getAllTasks() {
+        let data = {
+            request: 'getAllTasks',
+            token: localStorage.getItem('token'),
+            searchStr: document.getElementById('search').value,
+        }
+        ws.send(JSON.stringify(data), (args) => alert(args));
     }
 
     let idForUpdate;
 
     async function getTaskForView(id) {
         idForUpdate = id;
-
-        const config = {
-            method: 'get',
-            headers: {
-                "Content-type": "application/octet-stream; charset=UTF-8",
-            },
+        let data = {
+            request: 'getTaskForView',
+            token: localStorage.getItem('token'),
+            id: id
         }
-        const response = await fetch(`/getTask?id=${id}`, config)
-        if (response.status === 401) {
-            window.location.href = '/authorization';
-        }
-        let object = await response.json();
-        updateOpen(object);
-    }
-
-    async function createTask() {
-        let file = document.getElementById('input-file').files;
-        if (file.item(0) === null) {
-            alert("You have not selected a file!");
-            return;
-        }
-        let task =
-            {
-                id: Date.now(),
-                content: document.getElementById('task-content').value,
-                status: document.getElementById('executing-status').value,
-                date: document.getElementById('completion-date').value,
-                fileName: file.item(0).name,
-                fileContent: await readFile(file[0]),
-            }
-
-        const config = {
-            method: 'post',
-            headers: {
-                "Content-type": "application/json; charset=UTF-8",
-            },
-            body: JSON.stringify(task)
-        }
-        const response = await fetch(`/create`, config)
-        if (response.status === 401) {
-            window.location.href = '/authorization';
-        }
-        await getAllTasks();
+        ws.send(JSON.stringify(data));
     }
 
     async function updateTask() {
@@ -268,31 +247,47 @@
                 date: document.getElementById('completion-date-upd').value,
             }
 
-        const config = {
-            method: 'post',
-            headers: {
-                "Content-type": "application/json; charset=UTF-8",
-            },
-            body: JSON.stringify(task)
+        let data = {
+            request: 'update',
+            token: localStorage.getItem('token'),
+            task: task,
         }
-        const response = await fetch(`/update`, config)
-        if (response.status === 401) {
-            window.location.href = '/authorization';
+        ws.send(JSON.stringify(data));
+        await getAllTasks();
+    }
+
+    async function createTask() {
+        let file = document.getElementById('input-file').files;
+        let task =
+            {
+                id: Date.now(),
+                content: document.getElementById('task-content').value,
+                status: document.getElementById('executing-status').value,
+                date: document.getElementById('completion-date').value,
+                fileName: null,
+                fileContent: null,
+            }
+        if (file.item(0) !== null) {
+            task.fileContent = await readFile(file[0]);
+            task.fileName = file.item(0).name;
         }
+
+        let data = {
+            request: 'create',
+            token: localStorage.getItem('token'),
+            task: task,
+        }
+        ws.send(JSON.stringify(data));
         await getAllTasks();
     }
 
     async function deleteTask(id) {
-        const config = {
-            method: 'delete',
-            headers: {
-                "Content-type": "application/json; charset=UTF-8",
-            },
+        let data = {
+            request: 'delete',
+            token: localStorage.getItem('token'),
+            id: id,
         }
-        const response = await fetch(`/delete?id=${id}`, config)
-        if (response.status === 401) {
-            window.location.href = '/authorization';
-        }
+        ws.send(JSON.stringify(data));
         await getAllTasks();
     }
 

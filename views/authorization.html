@@ -31,26 +31,31 @@
 </html>
 
 <script>
+    const ws = new WebSocket("ws://localhost:3003");
+
+    ws.addEventListener("message", (event) => {
+        let result = JSON.parse(event.data)
+        if (result.status === 200) {
+            window.location.href = '/index';
+            console.log(result.token)
+            localStorage.setItem('token', result.token);
+        }
+        else{
+            alert(result.message);
+        }
+    });
+
     async function authorisation() {
         let data = {
+            request: 'authorization',
             login: document.getElementById("login").value,
             password: document.getElementById("password").value
         }
-
-        const config = {
-            method: 'post',
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            },
-            body: JSON.stringify(data)
-        }
-        const response = await fetch('/authorization', config)
-        if (response.status === 200) {
-            window.location.href = '/index';
-            let token = await response.text();
-            localStorage.setItem('token', token);
-        } else {
-            alert("Incorrect login or password!");
-        }
+        ws.send(JSON.stringify(data));
     }
+
+    window.onbeforeunload = function () {
+        ws.onclose = function () {}
+        ws.close();
+    };
 </script>

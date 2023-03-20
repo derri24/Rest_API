@@ -36,24 +36,30 @@
 </html>
 
 <script>
+
+    const ws = new WebSocket("ws://localhost:3003");
+
+    ws.addEventListener("message", (event) => {
+        let result = JSON.parse(event.data)
+        alert(result.message);
+        if (result.status === 200) {
+            window.location.href = '/authorization';
+        }
+    });
+
     async function registration() {
         let data = {
+            request: 'registration',
             name: document.getElementById("name").value,
             login: document.getElementById("login").value,
             password: document.getElementById("password").value
         }
-
-        const config = {
-            method: 'post',
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            },
-            body: JSON.stringify(data)
-        }
-        const response = await fetch('/registration', config)
-        alert(await response.text());
-        if (response.status === 200) {
-            window.location.href = '/authorization';
-        }
+        ws.send(JSON.stringify(data));
     }
+
+    window.onbeforeunload = function() {
+        ws.onclose = function () {}
+        ws.close();
+    };
+
 </script>
