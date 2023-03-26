@@ -25,7 +25,6 @@ wss.on('connection', function (ws) {
             if (obj.request !== "/index") {
                 ws.send(JSON.stringify(result));
             }
-            ws.redirect = "/authorization";
             return;
         }
         if (obj.request === 'registration') {
@@ -80,21 +79,26 @@ function registration(user) {
     if (user.name === "" || user.login === "" || user.password === "") {
         result.status = 403;
         result.message = "You should fill all fields!";
+        return result;
     }
     if (user.password.length < 8) {
         result.status = 403;
         result.message = "Password should has length more than 7!";
+        return result;
     }
     if (filesystem.readUsers().some(x => x.login === user.login)) {
         result.status = 403;
         result.message = "This login already exist!";
+        return result;
     } else {
         result.status = 200;
         result.message = "Success!";
+
+        let password = user.password;
+        user.password = crypto.createHash('sha256').update(password).digest('hex');
+        filesystem.writeUser(user);
     }
-    let password = user.password;
-    user.password = crypto.createHash('sha256').update(password).digest('hex');
-    filesystem.writeUser(user);
+
     return result;
 }
 
